@@ -4,6 +4,7 @@ A trial implementation of Barnsley Fern (https://en.wikipedia.org/wiki/Barnsley_
 
 import sys
 import random
+import math
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.cm as cmx
@@ -11,16 +12,18 @@ import csv
 
 DEFAULT_NUM_POINTS = 65536
 DEFAULT_NUM_COLORSHADES = 64
+EPSILON = 1.0e-7                # allowed relative difference between two floating numbers to be considered equal.
+
 # sum_probability is used as global here.
 sum_probability = []
 # The following a, b, c, d, e, f and p coefficients refer to the original Barnsley fern
-a = [ 0.0,  0.85,  0.20, -0.15]
-b = [ 0.0,  0.04, -0.26,  0.28]
-c = [ 0.0, -0.04,  0.23,  0.26]
-d = [0.16,  0.85,  0.22,  0.24]
-e = [ 0.0,   0.0,   0.0,   0.0]
-f = [ 0.0,  1.60,  1.60,  0.44]
-p = [0.01,  0.85,  0.07,  0.07]
+a = ( 0.0,  0.85,  0.20, -0.15)
+b = ( 0.0,  0.04, -0.26,  0.28)
+c = ( 0.0, -0.04,  0.23,  0.26)
+d = (0.16,  0.85,  0.22,  0.24)
+e = ( 0.0,   0.0,   0.0,   0.0)
+f = ( 0.0,  1.60,  1.60,  0.44)
+p = (0.01,  0.85,  0.07,  0.07)
 
 # f1 as described in the Wikipage -- it maps any point to another point at the base of the
 #     stem.  It is chosen 1% of the time.
@@ -68,6 +71,11 @@ def initialize_get_index():
     for probability in p:
         cumulated_prob += probability
         sum_probability.append(cumulated_prob)
+    if math.fabs(cumulated_prob - 1) > EPSILON:
+        s = "The given probabilities p do not add up to 1!"
+        sys.stderr.write(s)
+        quit()
+
 
 def get_index():
     x = random.random()
@@ -80,6 +88,7 @@ def transform(p):
     transformations = [transformation_1, transformation_2, transformation_3,
                        transformation_4]
     # Choosing the transformation function as selected by their probabilities.
+    # Here we have a list of functions.
     tindex = get_index()
     t = transformations[tindex]
     x, y = t(p)
@@ -116,8 +125,19 @@ def parse_fern():
     except:
         s = "Error occurred during parsing CSV file " + sys.argv[2] + " Default fern used."
         sys.stderr.write(s)
+        quit()
 
 def main():
+    # Printing module information. It is fine if some modules do not provide __version__.
+    try:
+        print('===== sys module version ' + sys.__version__ + ' =====')
+        print('===== random module version ' + random.__version__ + ' =====')
+        print('===== math module version ' + math.__version__ + ' =====')
+        print('===== matplotlib module version ' + matplotlib.__version__ + ' =====')
+        print('===== csv module version ' + csv.__version__ + ' =====')
+    except:
+        pass
+    
     # Two ways to call fern.py:
     # fern.py [NumPoints]
     if len(sys.argv) == 1:
@@ -130,17 +150,18 @@ def main():
             # Check for Python exceptions in https://docs.python.org/2/library/exceptions.html
             s = "You should provide an integer number as the number of points: " + sys.argv[1]
             sys.stderr.write(s)
-            # Setting n to an invalid number so we know we will skip over
-            n = 0
+            quit()
         except:
             s = "An unexpected error occurred."
             sys.stderr.write(s)
+            quit()
         finally:
             if len(sys.argv) == 3:
                 parse_fern()
             elif len(sys.argv) > 3:
                 s = "Too many command arguments given."
                 sys.stderr.write(s)
+                quit()
 
     if n > 0:
         initialize_get_index()
